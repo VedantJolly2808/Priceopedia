@@ -1,0 +1,284 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block style %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <style>
+
+
+        .header {
+            padding: 5px;
+            text-align: center;
+            background: Black;
+            color: white;
+
+        }
+
+        #myImg {
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #myImg:hover {
+            opacity: 0.7;
+        }
+
+        /* The Modal (background) */
+        .modal {
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            /* Stay in place */
+            z-index: 1;
+            /* Sit on top */
+            padding-top: 100px;
+            /* Location of the box */
+            left: 0;
+            top: 0;
+            width: 100%;
+            /* Full width */
+            height: 100%;
+            /* Full height */
+            overflow: auto;
+            /* Enable scroll if needed */
+            background-color: rgb(0, 0, 0);
+            /* Fallback color */
+            background-color: rgba(0, 0, 0, 0.9);
+            /* Black w/ opacity */
+        }
+
+        /* Modal Content (Image) */
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 50%;
+            max-width: 400px;
+        }
+
+        /* Caption of Modal Image (Image Text) - Same Width as the Image */
+        #caption {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            color: #ccc;
+            padding: 10px 0;
+            height: 150px;
+        }
+
+        /* Add Animation - Zoom in the Modal */
+        .modal-content,
+        #caption {
+            animation-name: zoom;
+            animation-duration: 0.6s;
+        }
+
+        @keyframes zoom {
+            from {
+                transform: scale(0)
+            }
+
+            to {
+                transform: scale(1)
+            }
+        }
+
+        /* The Close Button */
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* 100% Image Width on Smaller Screens */
+        @media only screen and (max-width: 300px) {
+            .modal-content {
+                width: 50%;
+            }
+        }
+
+
+        .checked {
+            color: orange;
+        }
+    </style>
+{% endblock style %}
+{% block content %}
+    <div class="jumbotron jumbotron-fluid">
+      <div class="container">
+        <h1 class="display-4">{{product.product_name}}</h1>
+        <p class="lead">{{product.description}}</p>
+        <p class="lead">Current Price: {{current_price}}</p>
+        <p class="lead">Minimum Price: {{minimum_price}}</p>
+        <p class="lead">Maximum Price: {{maximum_price}}</p>
+        <p class="lead">Average Price till Today: {{average_price}}</p>
+        <p class="lead">Ratings: {{product.rating}}</p>
+        <p class="lead">Users Bought: {{product.number_of_users_bought}}</p>
+        {% if user.is_superuser %}
+            <a href="{% url 'product-delete' product.product_id %}" class="btn btn-outline-danger">Delete this product</a>
+        {% endif %}
+        <div>
+        <table CELLPADDING=25 CELLSPACING=30>
+            <tr>
+                <!-- start of image -->
+                <td><img id="myImg"
+                        src="/static/{{product.product_id}}.jpg"
+                        alt="{{product.product_name}}" >
+
+                    <!-- The Modal -->
+                    <div id="myModal" class="modal">
+                        <span class="close">&times;</span>
+                        <img class="modal-content" id="img01">
+                        <div id="caption"></div>
+                    </div>
+
+                    <script>
+                        // Get the modal
+                        var modal = document.getElementById("myModal");
+
+                        // Get the image and insert it inside the modal - use its "alt" text as a caption
+                        var img = document.getElementById("myImg");
+                        var modalImg = document.getElementById("img01");
+                        var captionText = document.getElementById("caption");
+                        img.onclick = function () {
+                            modal.style.display = "block";
+                            modalImg.src = this.src;
+                            captionText.innerHTML = this.alt;
+                        }
+
+                        // Get the <span> element that closes the modal
+                        var span = document.getElementsByClassName("close")[0];
+
+                        // When the user clicks on <span> (x), close the modal
+                        span.onclick = function () {
+                            modal.style.display = "none";
+                        }
+                    </script>
+            </tr>
+        </table>
+
+    </div>
+      </div>
+    </div>
+    <div class="dropdown">
+      <a class="btn btn-info dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Select Time Range
+      </a>
+
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+        <a class="dropdown-item" href="{% url 'new-graph-detail' product.product_id 7 %}">1 week</a>
+        <a class="dropdown-item" href="{% url 'new-graph-detail' product.product_id 21 %}">3 weeks</a>
+        <a class="dropdown-item" href="{% url 'new-graph-detail' product.product_id 30 %}">1 month</a>
+        <a class="dropdown-item" href="{% url 'new-product-detail' product.product_id %}">From the product Launch Date</a>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+    <canvas id="myChart"></canvas>
+    <script type="text/javascript">
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var datas = {{data}}
+        var label_data = {{ labels|safe }};
+        var min_data = {{min_data}}
+        var max_data = {{max_data}}
+        var avg_data = {{avg_data}}
+
+        var chart = new Chart(ctx, {
+            // The type of chart we want to create
+            type: 'line',
+
+            // The data for our dataset
+            data: {
+                labels: label_data,
+                datasets: [{
+                    fill: false,
+                    label: 'Current Price',
+                    backgroundColor: 'rgb(195, 255, 0)',
+                    borderColor: 'rgb(234, 0, 255)',
+                    data: datas
+                },{
+                    label: 'Minimum Price',
+                    fill: false,
+                    backgroundColor: 'rgb(0, 0, 255)',
+                    borderColor: 'rgb(0, 0, 255)',
+                    borderDash: [5, 5],
+                    data: min_data
+                },{
+                    label: 'Maximum Price',
+                    fill: false,
+                    backgroundColor: 'rgb(0, 255, 0)',
+                    borderColor: 'rgb(0, 255, 0)',
+                    borderDash: [5, 5],
+                    data: max_data
+                },{
+                    label: 'Average Price',
+                    fill: false,
+                    backgroundColor: 'rgb(255, 0, 0)',
+                    borderColor: 'rgb(255, 0, 0)',
+                    borderDash: [5, 5],
+                    data: avg_data
+                }]
+            },
+
+            // Configuration options go here
+            // options: {
+            //     title: {
+            //         display: true,
+            //         text: 'Price History of the Product',
+            //         fontSize: 20,
+            //         fontStyle: 'bold'
+            //     }
+            // }
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Price History of the Product',
+                    fontSize: 20,
+                    fontStyle: 'bold'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Date',
+                            fontSize: 20,
+                            fontStyle: 'bold'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Price',
+                            fontSize: 20,
+                            fontStyle: 'bold'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+{% endblock content %}
